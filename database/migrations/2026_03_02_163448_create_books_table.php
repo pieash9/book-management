@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('isbn')->unique();
             $table->text('description')->nullable();
-            $table->foreignId('author_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('author_id')->constrained('authors')->cascadeOnDelete();
             $table->string("genre")->nullable();
             $table->date("published_at")->nullable();
             $table->integer("total_copies")->default(1);
