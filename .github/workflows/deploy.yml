@@ -1,0 +1,40 @@
+name: Deploy to Shared Hosting
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            cd /var/www/27493b2c-714f-4a45-aa12-aeaf694f4411/book-management.pieash9.me
+
+            # Pull the latest code
+            git pull origin main
+
+            # Install Composer dependencies (without dev dependencies)
+            composer install --no-dev --optimize-autoloader
+
+            # Clear all caches using optimize:clear
+            php artisan optimize:clear
+
+            # Run database migrations
+            php artisan migrate --force
+
+            # Optimize the application (caches config, routes, and views)
+            php artisan optimize
+
+            # Set proper permissions (use chmod instead of chown)
+            chmod -R 755 storage
+            chmod -R 755 bootstrap/cache
