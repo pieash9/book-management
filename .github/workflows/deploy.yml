@@ -21,20 +21,21 @@ jobs:
             cd /var/www/27493b2c-714f-4a45-aa12-aeaf694f4411/book-management.pieash9.me
 
             # Pull the latest code
-            git pull origin main
+            git pull origin main || { echo "Git pull failed"; exit 1; }
 
             # Install Composer dependencies (without dev dependencies)
-            composer install --no-dev --optimize-autoloader
+            composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction || { echo "Composer install failed"; exit 1; }
 
             # Clear all caches using optimize:clear
-            php artisan optimize:clear
+            php artisan optimize:clear || { echo "Optimize clear failed"; exit 1; }
 
             # Run database migrations
-            php artisan migrate --force
+            php artisan migrate --force || { echo "Migrations failed"; exit 1; }
 
             # Optimize the application (caches config, routes, and views)
-            php artisan optimize
+            php artisan optimize || { echo "Optimize failed"; exit 1; }
 
-            # Set proper permissions (use chmod instead of chown)
-            chmod -R 755 storage
-            chmod -R 755 bootstrap/cache
+            # Set proper permissions
+            chmod -R 755 storage || { echo "Storage permissions failed"; exit 1; }
+            chmod -R 755 bootstrap/cache || { echo "Cache permissions failed"; exit 1; }
+            echo "Deployment successful!"

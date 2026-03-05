@@ -53,6 +53,9 @@
            <main class="text-white">
                 <h1 class="text-3xl font-bold mb-4">Welcome to My App</h1>
                 <p class="text-lg">This is a simple welcome page.</p>
+                <div>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Temporibus eligendi, magnam facilis ipsa saepe cumque praesentium fugiat! Aliquid eos quas, esse culpa architecto vitae rem sed illo temporibus unde praesentium totam, perspiciatis atque quidem quia iusto. Natus repellendus totam quidem voluptatum atque molestias odio iure nobis, laudantium cumque cupiditate numquam sint consequuntur velit cum ipsa.</p>
+                </div>
             </main>
         </div>
 
