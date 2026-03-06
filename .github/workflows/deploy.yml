@@ -20,24 +20,31 @@ jobs:
           script: |
             set -e
 
-            APP_DIR="${{ secrets.SSH_APP_DIR }}"
+            APP_DIR=""
+
+            for candidate in \
+              "$HOME/book.pieash9.me" \
+              "$HOME/public_html/book.pieash9.me" \
+              "$HOME/domains/book.pieash9.me" \
+              "$HOME/domains/book.pieash9.me/laravel"
+            do
+              if [ -f "$candidate/artisan" ] && [ -d "$candidate/.git" ]; then
+                APP_DIR="$candidate"
+                break
+              fi
+            done
 
             if [ -z "$APP_DIR" ]; then
-              for candidate in \
-                "$HOME/book.pieash9.me" \
-                "$HOME/public_html/book.pieash9.me" \
-                "$HOME/domains/book.pieash9.me" \
-                "$HOME/domains/book.pieash9.me/public_html"
-              do
-                if [ -d "$candidate" ]; then
-                  APP_DIR="$candidate"
+              APP_DIR=$(find "$HOME" -maxdepth 4 -type f -name artisan 2>/dev/null | while read -r artisan_file; do
+                candidate_dir=$(dirname "$artisan_file")
+                if [ -d "$candidate_dir/.git" ]; then
+                  echo "$candidate_dir"
                   break
                 fi
-              done
+              done)
             fi
 
-            [ -n "$APP_DIR" ] || { echo "App directory not configured. Set SSH_APP_DIR in GitHub secrets."; exit 1; }
-            [ -d "$APP_DIR" ] || { echo "App directory not found: $APP_DIR"; exit 1; }
+            [ -n "$APP_DIR" ] || { echo "Laravel app directory not found under $HOME"; exit 1; }
             cd "$APP_DIR" || { echo "Failed to enter app directory: $APP_DIR"; exit 1; }
 
             # Pull the latest code
