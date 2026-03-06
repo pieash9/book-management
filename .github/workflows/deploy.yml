@@ -18,7 +18,27 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            cd book.pieash9.me  || exit 1
+            set -e
+
+            APP_DIR="${{ secrets.SSH_APP_DIR }}"
+
+            if [ -z "$APP_DIR" ]; then
+              for candidate in \
+                "$HOME/book.pieash9.me" \
+                "$HOME/public_html/book.pieash9.me" \
+                "$HOME/domains/book.pieash9.me" \
+                "$HOME/domains/book.pieash9.me/public_html"
+              do
+                if [ -d "$candidate" ]; then
+                  APP_DIR="$candidate"
+                  break
+                fi
+              done
+            fi
+
+            [ -n "$APP_DIR" ] || { echo "App directory not configured. Set SSH_APP_DIR in GitHub secrets."; exit 1; }
+            [ -d "$APP_DIR" ] || { echo "App directory not found: $APP_DIR"; exit 1; }
+            cd "$APP_DIR" || { echo "Failed to enter app directory: $APP_DIR"; exit 1; }
 
             # Pull the latest code
             git pull origin main || { echo "Git pull failed"; exit 1; }
