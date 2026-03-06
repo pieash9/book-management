@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAuthorRequest;
+use App\Http\Resources\AuthorResource;
 use App\Models\Author;
 use Illuminate\Http\Request;
 
@@ -15,17 +17,19 @@ class AuthorController extends Controller
         $authors = Author::paginate(10);
 
         return response()->json([
-            'author' => $authors,
-            "message" => "Authors retrieved successfully"
+            "message" => "Authors retrieved successfully",
+            'author' => $authors
         ],);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreAuthorRequest $request)
     {
-        //
+        $author = Author::create($request->validated());
+
+        return new AuthorResource($author);
     }
 
     /**
