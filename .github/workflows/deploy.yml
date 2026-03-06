@@ -38,3 +38,4 @@ jobs:
             # Set proper permissions (use chmod instead of chown)
             chmod -R 755 storage
             chmod -R 755 bootstrap/cache
+            
