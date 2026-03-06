@@ -18,7 +18,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            cd /var/www/305c8fd8-a8c5-46ba-98cd-145f7b84a278/book.pieash9.me
+            cd book.pieash9.me
 
             # Pull the latest code
             git pull origin main || { echo "Git pull failed"; exit 1; }
