@@ -15,9 +15,12 @@ class AuthorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            "name" => strtoupper($request->name),
-            "bio" => $request->bio,
-            "nationality" => strtolower($request->nationality)
+            "id" => $this->id,
+            "name" => strtoupper($this->name),
+            "bio" => $this->bio,
+            "nationality" => strtolower($this->nationality),
+            'books' => $this->when($this->relationLoaded("books"), $this->books->count()),
+            'created_at' => $this->created_at,
         ];
     }
 }

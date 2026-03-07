@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAuthorRequest;
 use App\Http\Resources\AuthorResource;
 use App\Models\Author;
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 
 class AuthorController extends Controller
@@ -14,12 +15,9 @@ class AuthorController extends Controller
      */
     public function index()
     {
-        $authors = Author::paginate(10);
+        $authors = Author::with('books')->paginate(10);
 
-        return response()->json([
-            "message" => "Authors retrieved successfully",
-            'author' => $authors
-        ],);
+        return AuthorResource::collection($authors);
     }
 
     /**
@@ -37,22 +35,46 @@ class AuthorController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $author = Author::findOrFail($id);
+
+        return new AuthorResource($author);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        //
+    public function update(StoreAuthorRequest $request, int $id)
+    {   
+         $author = Author::find($id);
+
+        if (!$author) {
+            return response()->json([
+                'message' => 'Cannot delete author'
+            ], 400);
+        }
+
+        $author->update($request->validated());
+
+        return new AuthorResource($author);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(int $id)
     {
-        //
+        $author = Author::find($id);
+
+        if (!$author) {
+            return response()->json([
+                'message' => 'Cannot delete author'
+            ], 400);
+        }
+
+        $author->delete();
+
+        return response()->json([
+            'message' => 'Author deleted successfully'
+        ]);
     }
 }
