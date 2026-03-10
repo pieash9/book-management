@@ -6,6 +6,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -59,5 +60,28 @@ class AuthController extends Controller
             'user' => new UserResource($user),
             'token' => $token,
         ], 200);
+    }
+
+    // get authenticated user
+    public function user(Request $request)
+    {
+        return new UserResource($request->user());
+    }
+
+    // logout
+    public function logout(Request $request)
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+        $token = $user?->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully',
+        ]);
     }
 }
