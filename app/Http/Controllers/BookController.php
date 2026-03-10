@@ -120,4 +120,12 @@ class BookController extends Controller
             'message' => 'Book deleted successfully!',
         ], 200);
     }
+
+    // get first five book
+    public function firstFiveBooks()
+    {
+        $book = Book::latest()->take(5)->get();
+
+        return BookResource::collection($book);
+    }
 }
