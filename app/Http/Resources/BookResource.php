@@ -26,7 +26,7 @@ class BookResource extends JsonResource
             'total_copies' => $this->total_copies,
             'available_copies' => $this->available_copies,
             'price' => $this->price,
-            'cover_image' => $this->coverImageUrl(),
+            'cover_image' => $this->coverImageUrl($request),
             'cover_image_path' => $this->cover_image,
             'status' => $this->status,
             'created_at' => $this->created_at,
@@ -35,7 +35,7 @@ class BookResource extends JsonResource
         ];
     }
 
-    protected function coverImageUrl(): ?string
+    protected function coverImageUrl(Request $request): ?string
     {
         if (! $this->cover_image) {
             return null;
@@ -45,6 +45,12 @@ class BookResource extends JsonResource
             return $this->cover_image;
         }
 
-        return Storage::disk('public')->url($this->cover_image);
+        $path = Storage::disk('public')->url($this->cover_image);
+
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            $path = parse_url($path, PHP_URL_PATH) ?: $path;
+        }
+
+        return $request->getSchemeAndHttpHost().'/'.ltrim($path, '/');
     }
 }
