@@ -19,14 +19,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Deploy application code via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
-          script_stop: true
+          command_timeout: 30m
           script: |
             set -e
 
@@ -38,27 +50,40 @@ jobs:
 
             composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-            if ! command -v npm >/dev/null 2>&1; then
-              echo "npm is required on the deployment server to build the React/Vite assets."
-              exit 1
-            fi
-
-            if [ -f package-lock.json ]; then
-              npm ci --include=dev
-            else
-              npm install --include=dev
-            fi
-
-            npm run build
-            php artisan storage:link || true
-
             php artisan optimize:clear
 
             php artisan migrate --force
 
-            php artisan optimize
-            php artisan queue:restart || true
-
+            mkdir -p public/build
+            php artisan storage:link || true
             chmod -R 775 storage
             chmod -R 775 bootstrap/cache
-            
+
+      - name: Upload built frontend assets
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: public/build/*
+          target: ${{ env.APP_PATH }}/public/build
+          strip_components: 2
+          rm: true
+          overwrite: true
+
+      - name: Finalize Laravel deployment
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          command_timeout: 15m
+          script: |
+            set -e
+
+            cd "${{ env.APP_PATH }}"
+
+            php artisan optimize
+            php artisan queue:restart || true
