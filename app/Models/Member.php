@@ -13,7 +13,6 @@ class Member extends Model
     protected $fillable = [
         'name',
         'email',
-        'phone',
         'address',
         'membership_date',
         'status'
@@ -30,6 +29,6 @@ class Member extends Model
 
     public function activeBorrowings()
     {
-        return $this->borrowings()->where('status', 'borrowed');
+        return $this->borrowings()->whereIn('status', ['borrowed', 'overdue']);
     }
 }

@@ -38,6 +38,8 @@ class Borrowing extends Model
 
     public function isOverdue()
     {
-        return $this->due_date < Carbon::today() && $this->status === 'borrowed';
+        return $this->returned_date === null
+            && $this->due_date < Carbon::today()
+            && in_array($this->status, ['borrowed', 'overdue'], true);
     }
 }

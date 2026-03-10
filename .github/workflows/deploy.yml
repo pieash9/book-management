@@ -2,11 +2,20 @@ name: Deploy to Shared Hosting
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      APP_PATH: /var/www/305c8fd8-a8c5-46ba-98cd-145f7b84a278/book.pieash9.me
+
     steps:
       - uses: actions/checkout@v4
 
@@ -17,25 +26,39 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
+          script_stop: true
           script: |
-            cd /var/www/305c8fd8-a8c5-46ba-98cd-145f7b84a278/book.pieash9.me
+            set -e
 
-            # Pull the latest code
+            cd "${{ env.APP_PATH }}"
+
+            git checkout main
+
             git pull origin main
 
-            # Install Composer dependencies (without dev dependencies)
-            composer install --no-dev --optimize-autoloader
+            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-            # Clear all caches using optimize:clear
+            if ! command -v npm >/dev/null 2>&1; then
+              echo "npm is required on the deployment server to build the React/Vite assets."
+              exit 1
+            fi
+
+            if [ -f package-lock.json ]; then
+              npm ci --include=dev
+            else
+              npm install --include=dev
+            fi
+
+            npm run build
+            php artisan storage:link || true
+
             php artisan optimize:clear
 
-            # Run database migrations
             php artisan migrate --force
 
-            # Optimize the application (caches config, routes, and views)
             php artisan optimize
+            php artisan queue:restart || true
 
-            # Set proper permissions (use chmod instead of chown)
-            chmod -R 755 storage
-            chmod -R 755 bootstrap/cache
+            chmod -R 775 storage
+            chmod -R 775 bootstrap/cache
             

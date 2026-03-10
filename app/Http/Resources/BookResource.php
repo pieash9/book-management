@@ -4,6 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BookResource extends JsonResource
 {
@@ -24,11 +26,25 @@ class BookResource extends JsonResource
             'total_copies' => $this->total_copies,
             'available_copies' => $this->available_copies,
             'price' => $this->price,
-            'cover_image' => $this->cover_image,
+            'cover_image' => $this->coverImageUrl(),
+            'cover_image_path' => $this->cover_image,
             'status' => $this->status,
             'created_at' => $this->created_at,
             'is_available' => $this->isAvailable(),
             'author' => new AuthorResource($this->whenLoaded('author')),
         ];
+    }
+
+    protected function coverImageUrl(): ?string
+    {
+        if (! $this->cover_image) {
+            return null;
+        }
+
+        if (Str::startsWith($this->cover_image, ['http://', 'https://'])) {
+            return $this->cover_image;
+        }
+
+        return Storage::disk('public')->url($this->cover_image);
     }
 }

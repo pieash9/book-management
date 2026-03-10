@@ -17,7 +17,7 @@ class BorrowingController extends Controller
     {
         $per_page = $request->per_page ?? 15;
 
-        $query = Borrowing::with('book', 'member');
+        $query = Borrowing::with('book.author', 'member');
 
         // filter by status
         if ($request->has('status')) {
@@ -52,7 +52,7 @@ class BorrowingController extends Controller
         // update book availability
         $book->borrow();
 
-        $borrowing->load('book', 'member');
+        $borrowing->load('book.author', 'member');
 
         return new BorrowingResource($borrowing);
     }
@@ -64,7 +64,7 @@ class BorrowingController extends Controller
     {
         $borrowing = Borrowing::findOrFail($id);
 
-        $borrowing->load('book', 'member');
+        $borrowing->load('book.author', 'member');
 
         return new BorrowingResource($borrowing);
     }
@@ -73,7 +73,7 @@ class BorrowingController extends Controller
     {
         $borrowing = Borrowing::findOrFail($id);
 
-        if ($borrowing->status !== 'borrowed') {
+        if (! in_array($borrowing->status, ['borrowed', 'overdue'], true)) {
             return response()->json([
                 'message' => 'This borrowing record is not currently borrowed'
             ], 422);
@@ -87,7 +87,7 @@ class BorrowingController extends Controller
 
         // update book availability
         $borrowing->book->returnBook();
-        $borrowing->load('book', 'member');
+        $borrowing->load('book.author', 'member');
 
         return new BorrowingResource($borrowing);
     }
@@ -101,12 +101,10 @@ class BorrowingController extends Controller
             ->where('due_date', '<', now())
             ->update(['status' => 'overdue']);
 
-        $overdueBorrowings = Borrowing::with(['book', 'member'])
+        $overdueBorrowings = Borrowing::with(['book.author', 'member'])
             ->where('status', 'overdue')
             ->where('due_date', '<', now())
             ->paginate($per_page);
-
-        
 
         return BorrowingResource::collection($overdueBorrowings);
     }

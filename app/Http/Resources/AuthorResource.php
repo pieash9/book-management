@@ -16,10 +16,10 @@ class AuthorResource extends JsonResource
     {
         return [
             "id" => $this->id,
-            "name" => strtoupper($this->name),
+            "name" => $this->name,
             "bio" => $this->bio,
-            "nationality" => strtolower($this->nationality),
-            'books' => $this->when($this->relationLoaded("books"), $this->books->count()),
+            "nationality" => $this->nationality,
+            'books_count' => $this->when(isset($this->books_count), $this->books_count),
             'created_at' => $this->created_at,
         ];
     }

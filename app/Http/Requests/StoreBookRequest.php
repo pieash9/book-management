@@ -37,7 +37,8 @@ class StoreBookRequest extends FormRequest
             'total_copies' => 'required|integer|min:1',
             'available_copies' => 'required|integer|min:0|lte:total_copies',
             'price' => 'nullable|numeric|min:0',
-            'cover_image' => 'nullable|string',
+            'cover_image' => 'nullable|image|max:5120',
+            'remove_cover_image' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
         ];
     }

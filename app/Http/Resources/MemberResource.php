@@ -22,8 +22,8 @@ class MemberResource extends JsonResource
             'membership_date' => $this->membership_date,
             'status' => $this->status,
             'active_borrowings_count' => $this->when(
-                $this->relationLoaded('activeBorrowings'),
-                $this->activeBorrowings->count()
+                isset($this->active_borrowings_count),
+                $this->active_borrowings_count
             ),
         ];
     }

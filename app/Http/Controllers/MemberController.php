@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Resources\MemberResource;
 use App\Models\Member;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 
 class MemberController extends Controller
@@ -15,7 +14,10 @@ class MemberController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Member::with('activeBorrowings');
+        $perPage = $request->integer('per_page', 10);
+
+        $query = Member::query()
+            ->withCount(['activeBorrowings as active_borrowings_count']);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -30,7 +32,7 @@ class MemberController extends Controller
         }
 
         // get members
-        $members = $query->paginate(10);
+        $members = $query->paginate($perPage);
 
         return MemberResource::collection($members);
     }
@@ -41,6 +43,7 @@ class MemberController extends Controller
     public function store(StoreMemberRequest $request)
     {
         $member = Member::create($request->validated());
+        $member->loadCount(['activeBorrowings as active_borrowings_count']);
 
         return new MemberResource($member);
     }
@@ -52,7 +55,7 @@ class MemberController extends Controller
     {
         $member = $this->findMemberOrFail($id);
 
-        $member->load(['activeBorrowings', 'borrowings']);
+        $member->loadCount(['activeBorrowings as active_borrowings_count']);
 
         return new MemberResource($member);
     }
@@ -65,6 +68,7 @@ class MemberController extends Controller
         $member = $this->findMemberOrFail($id);
 
         $member->update($request->validated());
+        $member->loadCount(['activeBorrowings as active_borrowings_count']);
 
         return new MemberResource($member);
     }

@@ -6,6 +6,8 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BookController extends Controller
 {
@@ -35,6 +37,10 @@ class BookController extends Controller
             $query->where('genre', $request->genre);
         }
 
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
         $books = $query->paginate($per_page);
 
         return BookResource::collection($books);
@@ -45,7 +51,7 @@ class BookController extends Controller
      */
     public function store(StoreBookRequest $request)
     {
-        $book = Book::create($request->validated());
+        $book = Book::create($this->buildPayload($request));
 
         $book->load('author');
 
@@ -92,7 +98,7 @@ class BookController extends Controller
             ], 404);
         }
 
-        $book->update($request->validated());
+        $book->update($this->buildPayload($request, $book));
 
         $book->load('author');
 
@@ -113,6 +119,7 @@ class BookController extends Controller
             ], 404);
         }
 
+        $this->deleteCoverImage($book->cover_image);
         $book->delete();
 
         return response()->json([
@@ -124,8 +131,33 @@ class BookController extends Controller
     // get first five book
     public function firstFiveBooks()
     {
-        $book = Book::latest()->take(5)->get();
+        $book = Book::with('author')->latest()->take(5)->get();
 
         return BookResource::collection($book);
+    }
+
+    protected function buildPayload(StoreBookRequest $request, ?Book $book = null): array
+    {
+        $data = $request->safe()->except(['cover_image', 'remove_cover_image']);
+
+        if (($request->boolean('remove_cover_image') || $request->hasFile('cover_image')) && $book?->cover_image) {
+            $this->deleteCoverImage($book->cover_image);
+            $data['cover_image'] = null;
+        }
+
+        if ($request->hasFile('cover_image')) {
+            $data['cover_image'] = $request->file('cover_image')->store('covers', 'public');
+        }
+
+        return $data;
+    }
+
+    protected function deleteCoverImage(?string $coverImage): void
+    {
+        if (! $coverImage || Str::startsWith($coverImage, ['http://', 'https://'])) {
+            return;
+        }
+
+        Storage::disk('public')->delete($coverImage);
     }
 }

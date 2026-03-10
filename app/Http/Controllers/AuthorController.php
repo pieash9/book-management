@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAuthorRequest;
 use App\Http\Resources\AuthorResource;
 use App\Models\Author;
-use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 
 class AuthorController extends Controller
@@ -13,9 +12,23 @@ class AuthorController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $authors = Author::with('books')->paginate(10);
+        $perPage = $request->integer('per_page', 10);
+
+        $authors = Author::query()
+            ->withCount('books')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->string('search')->toString();
+
+                $query->where(function ($nestedQuery) use ($search) {
+                    $nestedQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('nationality', 'like', "%{$search}%")
+                        ->orWhere('bio', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate($perPage);
 
         return AuthorResource::collection($authors);
     }
@@ -26,6 +39,7 @@ class AuthorController extends Controller
     public function store(StoreAuthorRequest $request)
     {
         $author = Author::create($request->validated());
+        $author->loadCount('books');
 
         return new AuthorResource($author);
     }
@@ -35,7 +49,7 @@ class AuthorController extends Controller
      */
     public function show(string $id)
     {
-        $author = Author::findOrFail($id);
+        $author = Author::withCount('books')->findOrFail($id);
 
         return new AuthorResource($author);
     }
@@ -54,6 +68,7 @@ class AuthorController extends Controller
         }
 
         $author->update($request->validated());
+        $author->loadCount('books');
 
         return new AuthorResource($author);
     }

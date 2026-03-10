@@ -17,7 +17,11 @@ class MemberFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
+            'address' => fake()->address(),
+            'membership_date' => fake()->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
+            'status' => fake()->randomElement(['active', 'inactive']),
         ];
     }
 }
